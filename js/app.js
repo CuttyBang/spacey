@@ -38,7 +38,7 @@ $(document).ready(function(){
         cof: 0.8
     });
 
-    
+
     window.addEventListener('resize', function () {
         viewportBounds = Physics.aabb(0, 0, renderer.width, renderer.height);
         edgeBounce.setAABB(viewportBounds);
@@ -56,7 +56,7 @@ $(document).ready(function(){
         }
     }));
 
-    world.add(Physics.body('circle', {
+		var planet = Physics.body('circle', {
         x: renderer.width / 2,
         y: renderer.height / 2,
         radius: 50,
@@ -67,7 +67,9 @@ $(document).ready(function(){
             fillStyle: '#223a8f',
             angleIndicator: '#223a8f'
         }
-    }));
+    });
+    planet.sleep(true);
+    world.add(planet);
 
 
 
@@ -116,18 +118,18 @@ $(document).ready(function(){
         (function animateSpace(){
                 asteroid.left += 20;
                 asteroid.top += (asteroid.movingTop ? -2 : 2);
-                
+
                 if (asteroid.left > canvas.width){
                     canvas.remove(asteroid);
                 }
                 else if (asteroid.top > 700){
                     canvas.remove(asteroid);
-                } 
+                }
             canvas.renderAll();
             fabric.util.requestAnimFrame(animateSpace);
         })();
     }
-   
+
     var attractor = Physics.behavior('attractor', {
         order: 0,
         strength: .002
@@ -147,7 +149,7 @@ $(document).ready(function(){
         }
     });
 
-   
+
 
     // add things to the world
     world.add([
@@ -163,7 +165,7 @@ $(document).ready(function(){
     });
 });
 
-	
+
 
 	//fly();
 	//canvas.add(planet);
@@ -177,9 +179,3 @@ $(document).ready(function(){
 
 
 });
-
-
-
-
-
-
