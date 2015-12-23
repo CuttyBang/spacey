@@ -1,164 +1,175 @@
 $(document).ready(function(){
-	fabric.Object.prototype.originX = fabric.Object.prototype.originY = 'center';
+	//fabric.Object.prototype.originX = fabric.Object.prototype.originY = 'center';
 
 	var getRandomInt = fabric.util.getRandomInt,
 		WIDTH = window.innerWidth,
 		HEIGHT = window.innerHeight,
 		moons = [];
 
+    var canvas = new fabric.Canvas('screen',{
+        hoverCursor: 'pointer',
+        selection: false,
+        backgroundColor: '#000',
+        width: WIDTH,
+        height: HEIGHT,
+        perPixelTargetFind: true,
+        targetFindToTolerance: 5
+    });
+
+	Physics(function (world) {
+
+    var viewportBounds = Physics.aabb(-100, -100, window.innerWidth + 100 , window.innerHeight + 100),
+        edgeBounce,
+        renderer;
+
+    var renderer = Physics.renderer('canvas', {
+        el: 'screen'
+    });
+
+    world.add(renderer);
+
+    world.on('step', function () {
+        world.render();
+    });
+
+    edgeBounce = Physics.behavior('edge-collision-detection', {
+        aabb: viewportBounds,
+        restitution: 0.99,
+        cof: 0.8
+    });
+
+    
+    window.addEventListener('resize', function () {
+        viewportBounds = Physics.aabb(0, 0, renderer.width, renderer.height);
+        edgeBounce.setAABB(viewportBounds);
+    }, true);
+
+    world.add(Physics.body('circle', {
+        x: renderer.width / 2,
+        y: renderer.height / 2 - 240,
+        vx: 0.15,
+        mass: 2,
+        radius: 20,
+        styles: {
+            fillStyle: '#22feac',
+            angleIndicator: '#22feac'
+        }
+    }));
+
+    world.add(Physics.body('circle', {
+        x: renderer.width / 2,
+        y: renderer.height / 2,
+        radius: 50,
+        mass: 20,
+        vx: 0.00001,
+        vy: 0,
+        styles: {
+            fillStyle: '#223a8f',
+            angleIndicator: '#223a8f'
+        }
+    }));
 
 
-	var canvas = new fabric.Canvas('screen',{
-		hoverCursor: 'pointer',
-		selection: false,
-		backgroundColor: '#000',
-		width: WIDTH,
-		height: HEIGHT,
-		perPixelTargetFind: true,
-		targetFindToTolerance: 5
-	});
 
-	var planet = new fabric.Circle({
-		radius: 50,
-		fill: '#223a8f',
-		left: canvas.getWidth() / 2,
-		top: canvas.getHeight() / 2,
-		originX: 'center',
-		originY: 'center',
-		hasBorders: false,
-		hasControls: false
-	});
+    var addBody = function(){
+        t = getRandomInt(20,300);
+        var asteroid = world.add(Physics.body('circle', {
+            x: -20,
+            y: getRandomInt(0, HEIGHT),
+            radius: getRandomInt(10, 20),
+            vx: 0.15,
+            mass: getRandomInt(1, 5),
+            styles: {
+                fillStyle: '#22feac',
+                angleIndicator: '#22feac'
+            }
+        }));
+        return asteroid
 
-	var sat = new fabric.Circle({
-		radius: 15,
-		left: 200,
-		top: 100,
-		selectable: false,
-		originY: 'center',
-		originX: 'center',
-		fill: '#22feac'
-	});
+        if(asteroid.mass >= 1 && asteroid.mass < 3){
+            play1();
+        }
+        if(asteroid.mass >= 3 && asteroid.mass < 4){
+            play2();
+        }
+        if(asteroid.mass >= 4 && asteroid.mass <= 5){
+            play3();
+        }
+    }
+    addBody();
+
+    //var asteroid = world.add(Physics.body('circle', {
+        //x: -20,
+        //y: getRandomInt(0, HEIGHT),
+        //radius: 10,
+        //vx: -0.25,
+        //mass: getRandomInt(1, 5),
+        //styles: {
+            //fillStyle: '#22feac',
+            //angleIndicator: '#22feac'
+        //}
+    //}));
 
 
+    function space(){
+        asteroid.movingTop = !!Math.round(Math.random());
+        (function animateSpace(){
+                asteroid.left += 20;
+                asteroid.top += (asteroid.movingTop ? -2 : 2);
+                
+                if (asteroid.left > canvas.width){
+                    canvas.remove(asteroid);
+                }
+                else if (asteroid.top > 700){
+                    canvas.remove(asteroid);
+                } 
+            canvas.renderAll();
+            fabric.util.requestAnimFrame(animateSpace);
+        })();
+    }
+   
+    var attractor = Physics.behavior('attractor', {
+        order: 0,
+        strength: .002
+    });
+    world.on({
+        'interact:poke': function( pos ){
+            world.wakeUpAll();
+            attractor.position( pos );
+            world.add( attractor );
+        },
+        'interact:move': function( pos ){
+            attractor.position( pos );
+        },
+        'interact:release': function(){
+            world.wakeUpAll();
+            world.remove( attractor );
+        }
+    });
 
-	var animateOrbit = function(p){
-		var radius = p.radius * 5 + 100,
-			cx = planet.left,
-			cy = planet.top,
-			duration = p.radius * 100, 
-			startAngle = getRandomInt(-180, 0),
-			endAngle = startAngle + 359;
-		(function animate() {
-			fabric.util.animate({
-				startValue: startAngle,
-				endValue: endAngle,
-				duration: duration,
-				easing: function (t, b, c, d) {
-						return c*t/d + b;
-						},
-				onChange: function(angle){
-					angle = fabric.util.degreesToRadians(angle);
-					var x = cx + radius * Math.cos(angle);
-					var y = cy + radius * Math.sin(angle);
-					p.set({left: x, top: y}).setCoords();
-					canvas.renderAll();
-				},
-				onComplete: animate,
-			})
-		})();
+   
 
-	};
-	var ball = {
-		x: canvas.getWidth() / 2,
-		y: canvas.getHeight() / 2,
-		vx: 9,
-		vy: 5,
-		radius: 20
-	};
+    // add things to the world
+    world.add([
+        Physics.behavior('interactive', { el: renderer.container }),
+        Physics.behavior('newtonian', { strength: .5 }),
+        Physics.behavior('body-impulse-response'),
+        edgeBounce
+    ]);
 
-	var comet = new fabric.Circle({
-		radius: ball.radius,
-		left: ball.x,
-		top: ball.y,
-		fill: '#22feac'
-	});
+    // subscribe to ticker to advance the simulation
+    Physics.util.ticker.on(function( time ) {
+        world.step( time );
+    });
+});
+
 	
-	function fly(){
-		canvas.add(comet);
-		(function animate(){
-			comet.left += ball.vx;
-			comet.top += ball.vy;
-			if (comet.top + ball.vy > (HEIGHT + 90)){
-				comet.fill = "#6e7f80";
-				play1();
-				ball.vy = -ball.vy;
-			}
-			if (comet.top + ball.vy < (0 - 90)){
-				comet.fill = "#f1f2c6"
-				play3();
-				ball.vy = -ball.vy;
-			}
-			if (comet.left + ball.vy > (WIDTH + 90)){
-				comet.fill = "#97a18d"
-				play2();
-				ball.vx = -ball.vx
-			}
-			if (comet.left + ball.vy < (0 - 90)){
-				comet.fill = "#ffb745"
-				play4();
-				ball.vx = -ball.vx
-			}
-			canvas.renderAll();
-			fabric.util.requestAnimFrame(animate);
-		})();
-
-	}
-
-	var createMoon = function(){
-		var planetColor = ['#22feac', '#aaddf1', '#ea9dcf', '#eaf'];
-			var moonSize = getRandomInt(5, 40);
-			var m = new fabric.Circle({
-				radius: moonSize,
-				fill: planetColor[getRandomInt(0, 3)],
-
-				originX: 'center',
-				originY: 'center'
-			});
-
-			m.hasControls = m.hasBorders = false;
-
-			//moons.push(m);
-			//createLine(m.x, m.y, planet.x, planet.y);
-			animateOrbit(m);
-			return m;
-	}
-
-
-	var createLine = function(c){
-		return new fabric.Line(c, {
-			fill: '',
-			stroke: '#888',
-			strokeWidth: 1,
-			selectable: false,
-			x1: planet.left,
-			y1: planet.top,
-			x2: createMoon.x,
-			y2: createMoon.y
-
-		});
-	}
-
-	function follow(){
-			planet.setCoords(planet.getLeft());
-			planet.setCoords(planet.getTop());
-			canvas.add(createMoon());
-	}
 
 	//fly();
-	canvas.add(planet);
-	canvas.on({
-		'mouse:down': follow
-	});
+	//canvas.add(planet);
+	//canvas.on({
+		//'mouse:down': follow
+	//});
 
 
 
