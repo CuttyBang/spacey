@@ -1,5 +1,5 @@
 $(document).ready(function(){
-	//fabric.Object.prototype.originX = fabric.Object.prototype.originY = 'center';
+	fabric.Object.prototype.originX = fabric.Object.prototype.originY = 'center';
 
 	var getRandomInt = fabric.util.getRandomInt,
 		WIDTH = window.innerWidth,
@@ -149,7 +149,6 @@ $(document).ready(function(){
 
    
 
-    // add things to the world
     world.add([
         Physics.behavior('interactive', { el: renderer.container }),
         Physics.behavior('newtonian', { strength: .5 }),
@@ -157,7 +156,6 @@ $(document).ready(function(){
         edgeBounce
     ]);
 
-    // subscribe to ticker to advance the simulation
     Physics.util.ticker.on(function( time ) {
         world.step( time );
     });
