@@ -25,7 +25,7 @@ $(document).ready(function(){
     renderer = Physics.renderer('canvas', {
         el: 'screen',
         width: WIDTH,
-        height: HEIGHT 
+        height: HEIGHT
     });
 
 
@@ -33,8 +33,6 @@ $(document).ready(function(){
 
     world.on('step', function () {
         world.render();
-        console.log(moonPos.y);
-
         sound();
     });
 
@@ -88,8 +86,8 @@ $(document).ready(function(){
 
     //amount *= 0.00001;
     //var v = scratch.vector().set(
-           // amount * Math.cos( angle ), 
-            //amount * Math.sin( angle ) 
+           // amount * Math.cos( angle ),
+            //amount * Math.sin( angle )
        // );
         //this.accelerate( v );
         //scratch.done();
@@ -131,16 +129,24 @@ $(document).ready(function(){
         x: planet.state.pos.get(0),
         y: planet.state.pos.get(1)
         };
-        if ((planetPos.x + planetPos.y) - (moonPos.y + moonPos.x) < 20) {
+
+				// measure the absolute distance horizontally and vertically
+				var horzDist = Math.abs(planetPos.x - moonPos.x);
+				var vertDist = Math.abs(planetPos.y - moonPos.y);
+
+				// calculate the distance
+				var distance = Math.sqrt(Math.pow(horzDist,2) + Math.pow(vertDist,2));
+
+        if (distance < 20) {
             play1();
         }
-        if ((planetPos.x + planetPos.y) - (moonPos.y + moonPos.x) < 50) {
+        if (distance < 50) {
             play2();
         }
-        
 
-    } 
-   
+
+    }
+
 
     var addBody = function(){
         t = getRandomInt(20,300);
@@ -158,7 +164,7 @@ $(document).ready(function(){
         return asteroid
     }
 
-  
+
 
     //var asteroid = world.add(Physics.body('circle', {
         //x: -20,
@@ -214,7 +220,7 @@ $(document).ready(function(){
 
     });
 
-    
+
 
 
 
@@ -230,4 +236,3 @@ $(document).ready(function(){
 
 
 });
-
