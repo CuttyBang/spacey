@@ -50,41 +50,60 @@
 			osc3.stop(context.currentTime + 5);
 	};
 
-	function play2(){
+	
 			var osc2 = context.createOscillator();
 			osc2.type = 'sine';
 			osc2.frequency.value = 329.63;
 			var gain2 = context.createGain();
-			gain2.gain.value = 0.5;
+			gain2.gain.value = 0.0;
 			var filter2 = context.createBiquadFilter();
 			filter2.frequency.value = 1000;
-			osc2.connect(gain2);
+			//osc2.connect(gain);
 			gain2.connect(filter2);
 			filter2.connect(speaker);
 			//oscillators.push(osc2);
-			osc2.start(0);
-			gain2.gain.setValueAtTime(0.5, context.currentTime);
-			gain2.gain.linearRampToValueAtTime(0, context.currentTime + 5)
-			osc2.stop(context.currentTime + 5);
-	};
+			//osc2.start(0);
+			//gain2.gain.setValueAtTime(0.5, context.currentTime);
+			//gain2.gain.linearRampToValueAtTime(0, context.currentTime + 5)
+			//osc2.stop(context.currentTime + 5);
+	
 
-
-	function play1(){
+			var LFO = context.createOscillator();
+			LFO.frequency.value = 3;
+			var depth = context.createGain();
+			depth.gain.value = 1000;
+	
 			var osc1 = context.createOscillator();
-			osc1.type = 'sine';
-			osc1.frequency.value = 261.63;
+			osc1.type = 'triangle';
+			osc1.frequency.value = 130.81;
 			var gain = context.createGain();
-			gain.gain.value = 0.5;
+			gain.gain.value = 0.0;
 			var filter = context.createBiquadFilter();
+			filter.type = 'lowpass';
+			filter.Q.value = 0.5;
 			filter.frequency.value = 1000;
+			LFO.connect(depth);
+			depth.connect(filter.frequency);
+			osc2.connect(gain);
 			osc1.connect(gain);
 			gain.connect(filter);
 			filter.connect(speaker);
-			//oscillators.push(osc1);
-			osc1.start(0);
-			gain.gain.setValueAtTime(0.5, context.currentTime);
-			gain.gain.linearRampToValueAtTime(0, context.currentTime + 5)
-			osc1.stop(context.currentTime + 5);
+			//osc1.start(0);
+			//gain.gain.setValueAtTime(0.5, context.currentTime);
+			//gain.gain.linearRampToValueAtTime(0, context.currentTime + 5)
+			//osc1.stop(context.currentTime + 5);
+	
+
+	function att(t){
+		x = gain.gain.setValueAtTime(0, context.currentTime);
+		y = gain.gain.linearRampToValueAtTime(1, context.currentTime + t);
+		return x,y;
+	};
+
+	function dec(t){
+		x = gain.gain.setValueAtTime(1, context.currentTime);
+		y = gain.gain.linearRampToValueAtTime(0, context.currentTime + t);
+		return x,y;
 	};
 
 	function end(){
