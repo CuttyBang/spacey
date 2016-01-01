@@ -18,7 +18,7 @@ $(document).ready(function(){
 
     Physics(function(world) {
 
-        var viewportBounds = Physics.aabb(-100, -100, window.innerWidth + 100 , window.innerHeight + 100),
+        var viewportBounds = Physics.aabb(-100, -100, WIDTH + 100, HEIGHT + 100),
             edgeBounce,
             renderer;
 
@@ -27,16 +27,15 @@ $(document).ready(function(){
             width: WIDTH,
             height: HEIGHT
         });
-
-
         world.add(renderer);
 
         world.on('step', function () {
             world.render();
-            sound();
-            sound2(a);
-
+            //sound();
+            //sound2(bodies);
         });
+
+
 
         edgeBounce = Physics.behavior('edge-collision-detection', {
             aabb: viewportBounds,
@@ -45,10 +44,18 @@ $(document).ready(function(){
         });
 
 
-        window.addEventListener('resize', function () {
+        $(document).on('resize', function () {
             viewportBounds = Physics.aabb(0, 0, renderer.width, renderer.height);
             edgeBounce.setAABB(viewportBounds);
         }, true);
+
+        $(document).keydown(function(e){
+          if (e.keyCode === 32){
+            e.preventDefault();
+            oscFactory();
+            asteroid();
+          }
+        });
 
 
         var moon = Physics.body('circle', {
@@ -77,29 +84,37 @@ $(document).ready(function(){
             }
         });
 
-        var a = Physics.body('circle', {
-            x: renderer.width / 2 - 200, //-20,
-            y: renderer.height / 2 - 250, //getRandomInt(0, HEIGHT),
-            radius: 10,
-            mass: 5,
-            vx: 0.15,
-            styles: {
-                fillStyle: '#22feac',
-                angleIndicator: '#22feac'
-            }
-        });
-        
+
+
         var distances = [];
         var distList = [];
+        var bodies = [];
         planet.treatment = 'static';
         planet.sleep(true);
         world.add(planet);
         world.add(moon);
-        //world.add(a);
-        osc1.start(0);
-        osc2.start(0);
+        //osc1.start(0);
+        //osc2.start(0);
+        //lfo.start(0);
 
 
+        var asteroid = function(){
+          var a = Physics.body('circle', {
+              x: -20,
+              y: getRandomInt(0, HEIGHT),
+              radius: getRandomInt(10, 20),
+              mass: getRandomInt(1, 5),
+              vx: 0.15,
+              styles: {
+                  fillStyle: '#22feac',
+                  angleIndicator: '#22feac'
+              }
+          });
+          world.add(a);
+          bodies.push(a);
+          var l = new Array;
+          distList.push(l);
+        }
 
         function sound(){
             var moonPos = {
@@ -121,50 +136,49 @@ $(document).ready(function(){
             if (distance <= 300) {
                 if (distances[distances.length - 1] < distances[distances.length - 2]){
                    gain.gain.value = Math.min(gain.gain.value + 0.001,1);
-                   //filter.frequency.value += 300;
                 }
                 if (distances[distances.length - 1] > distances[distances.length - 2]){
                    gain.gain.value = Math.max(gain.gain.value - 0.001,0);
-                   //filter.frequency.value -= 300;
                 }
-                
+
             }
-           
+
             if (distance > 300) {
                 gain.gain.value = 0.0;
+
             }
 
         };
 
-        function sound2(){
+        function sound2(ast){
             var mPos = {
-            x: a.state.pos.get(0),
-            y: a.state.pos.get(1)
+            x: ast.state.pos.get(0),
+            y: ast.state.pos.get(1)
             };
             var planetPos = {
             x: planet.state.pos.get(0),
             y: planet.state.pos.get(1)
             };
-
                     // measure the absolute distance horizontally and vertically
                     var horzDist = Math.abs(planetPos.x - mPos.x);
                     var vertDist = Math.abs(planetPos.y - mPos.y);
 
                     // calculate the distance
                     var distance = Math.sqrt(Math.pow(horzDist,2) + Math.pow(vertDist,2));
-                    distList.push(Math.round(distance));
-            if (distance <= 150) {
-                if (distList[distList.length - 1] < distList[distList.length - 2]){
-                   gain2.gain.value += 0.01;
+                    var j = distList[distList.length - 1]
+                    j.push(Math.round(distance));
+            if (distance <= 200) {
+                if (j[j.length - 1] < j[j.length - 2]){
+                   gains[gains.length -1].gain.value += 0.001;
                 }
-                if (distList[distList.length - 1] > distList[distList.length - 2]){
-                   gain2.gain.value -= 0.01;
+                if (j[j.length - 1] > j[j.length - 2]){
+                   gains[gains.length -1].gain.value -= 0.001;
                 }
-                
+
             }
-           
-            if (distance > 150) {
-                gain2.gain.value = 0.0;
+
+            if (distance > 200) {
+                gains[gains.length - 1].gain.value = 0.0;
             }
 
         };
@@ -180,7 +194,6 @@ $(document).ready(function(){
 
         world.on({
             'interact:poke': function(pos){
-                //play1();
                 world.wakeUpAll();
                 attractor.position(pos);
                 world.add(attractor);
@@ -189,7 +202,6 @@ $(document).ready(function(){
                 attractor.position(pos);
             },
             'interact:release': function(){
-                //play2();
                 planet.sleep(true);
                 world.remove(attractor);
             }

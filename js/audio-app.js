@@ -3,7 +3,25 @@
 	var AudioContext = window.AudioContext || window.webkitAudioContext;
 	var context = new AudioContext();
 	var speaker = context.destination;
+	var oscTypes = ['sine', 'triangle'];
+	var freqs = [130.81, 329.63, 392, 523.25];
 	var oscillators = [];
+	var gains = [];
+  var getRandomInt = fabric.util.getRandomInt;
+
+	var oscFactory = function(){
+		var o = context.createOscillator();
+		o.type = oscTypes[getRandomInt(0,1)];
+		o.frequency.value = freqs[getRandomInt(0, 3)];
+		var k = context.createGain();
+		k.gain.value = 0.0;
+		o.connect(k);
+		k.connect(speaker);
+		o.start(0);
+		gains.push(k);
+		oscillators.push(o);
+	}
+
 
 	function play4(){
 			var osc4 = context.createOscillator();
@@ -50,7 +68,7 @@
 			osc3.stop(context.currentTime + 5);
 	};
 
-	
+
 			var osc2 = context.createOscillator();
 			osc2.type = 'sine';
 			osc2.frequency.value = 329.63;
@@ -66,13 +84,13 @@
 			//gain2.gain.setValueAtTime(0.5, context.currentTime);
 			//gain2.gain.linearRampToValueAtTime(0, context.currentTime + 5)
 			//osc2.stop(context.currentTime + 5);
-	
 
-			var LFO = context.createOscillator();
-			LFO.frequency.value = 3;
+
+			var lfo = context.createOscillator();
+			lfo.frequency.value = 3;
 			var depth = context.createGain();
 			depth.gain.value = 1000;
-	
+
 			var osc1 = context.createOscillator();
 			osc1.type = 'triangle';
 			osc1.frequency.value = 130.81;
@@ -82,17 +100,17 @@
 			filter.type = 'lowpass';
 			filter.Q.value = 0.5;
 			filter.frequency.value = 1000;
-			LFO.connect(depth);
-			depth.connect(filter.frequency);
-			osc2.connect(gain);
+			//depth.connect(lfo);
+			//lfo.connect(filter.frequency);
 			osc1.connect(gain);
+			osc2.connect(gain);
 			gain.connect(filter);
 			filter.connect(speaker);
 			//osc1.start(0);
 			//gain.gain.setValueAtTime(0.5, context.currentTime);
 			//gain.gain.linearRampToValueAtTime(0, context.currentTime + 5)
 			//osc1.stop(context.currentTime + 5);
-	
+
 
 	function att(t){
 		x = gain.gain.setValueAtTime(0, context.currentTime);
@@ -113,5 +131,3 @@
   				o.disconnect();
   		};
 	};
-
-
