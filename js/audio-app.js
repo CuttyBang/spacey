@@ -1,133 +1,165 @@
+//webAudio set up
+var AudioContext = window.AudioContext || window.webkitAudioContext;
+var context = new AudioContext();
+var speaker = context.destination;
+
+var oscillators = [],
+	gains = [],
+	filters = [],
+	getRandomInt = fabric.util.getRandomInt;
+
+var dynamics = context.createDynamicsCompressor();
+dynamics.threshold.value = -50;
+dynamics.knee.value = 40;
+dynamics.ratio.value = 12;
+dynamics.reduction.value = -5;
+dynamics.attack.value = 0;
+dynamics.release.value = 0.3;
+
+var boost = context.createGain();
+boost.gain.value = 0.8
+var hpf = context.createBiquadFilter();
+hpf.type = 'highpass';
+hpf.frequency.value = 100;
+var distortion = context.createWaveShaper();
+distortion.curve = distCurve(20);
+distortion.oversample = '4x';
+
+var delay = context.createDelay();
+delay.delayTime.value = 0.2;
+var dFilt = context.createBiquadFilter();
+dFilt.frequency.value = 1000;
+var dGain = context.createGain();
+dGain.gain.value = 0.8;
 
 
-	var AudioContext = window.AudioContext || window.webkitAudioContext;
-	var context = new AudioContext();
-	var speaker = context.destination;
-	var oscTypes = ['sine', 'triangle'];
-	var freqs = [130.81, 329.63, 392, 523.25];
-	var oscillators = [];
-	var gains = [];
-  var getRandomInt = fabric.util.getRandomInt;
-
-	var oscFactory = function(){
-		var o = context.createOscillator();
-		o.type = oscTypes[getRandomInt(0,1)];
-		o.frequency.value = freqs[getRandomInt(0, 3)];
-		var k = context.createGain();
-		k.gain.value = 0.0;
-		o.connect(k);
-		k.connect(speaker);
-		o.start(0);
-		gains.push(k);
-		oscillators.push(o);
+function distCurve(amt){
+	var k = typeof amt === 'number' ? amt : 50,
+		n_samples = 44100,
+		curve = new Float32Array(n_samples),
+		deg = Math.PI / 180,
+		i = 0,
+		x;
+	for ( ; i < n_samples; ++i){
+		x = i * 2 / n_samples -1;
+		curve[i] = (3+k)*x*20*deg/(Math.PI + k * Math.abs(x));
 	}
+	return curve;
+};
+
+var verb = (function() {
+		var convolver = context.createConvolver(),
+				noiseBuffer = context.createBuffer(2, 3 * context.sampleRate, context.sampleRate),
+				left = noiseBuffer.getChannelData(0),
+				right = noiseBuffer.getChannelData(1);
+		for (var i = 0; i < noiseBuffer.length; i++) {
+				left[i] = Math.random() * 2 - 1;
+				right[i] = Math.random() * 2 - 1;
+		}
+		convolver.buffer = noiseBuffer;
+		//convolver.normalize = true;
+		return convolver;
+})();
+
+boost.connect(hpf);
+hpf.connect(delay);
+verb.connect(speaker);
+
+dynamics.connect(verb);
+
+//delay effect
+delay.connect(dGain);
+dGain.connect(dFilt);
+dFilt.connect(delay);
+delay.connect(speaker);
+
+var oscTypes = ['sine', 'triangle'],
+		freqs = [130.81, 329.63, 392, 523.25];
+
+var scale = [
+	64.22,
+	72.08,
+	80.91,
+	85.72,
+	96.22,
+	108,
+	121.23,
+	128.43
+];
+
+var oscFactory = function(){
+	var o = context.createOscillator();
+	o.type = 'sawtooth';
+	o.frequency.value = scale[getRandomInt(0, 7)];
+	var k = context.createGain();
+	k.gain.value = 0.0;
+	var filter = context.createBiquadFilter();
+	filter.type = 'lowpass';
+	filter.frequency.value = 10;
+	filter.Q.value = 0;
+	var distortion = context.createWaveShaper();
+	distortion.curve = distCurve(10);
+	distortion.oversample = '4x';
+	var delay = context.createDelay();
+	delay.delayTime.value = 0.2;
+	var dFilt = context.createBiquadFilter();
+	dFilt.frequency.value = 1000;
+	var dGain = context.createGain();
+	dGain.gain.value = 0.8;
+	
+	o.connect(k);
+	k.connect(distortion);
+	distortion.connect(filter);
+	//filter.connect(hpf);
+	filter.connect(speaker);
 
 
-	function play4(){
-			var osc4 = context.createOscillator();
-			osc4.type = 'sine';
-			osc4.frequency.value = 523.25;
-			var gain4 = context.createGain();
-			gain4.gain.value = 0.5;
-			var filter4 = context.createBiquadFilter();
-			filter4.frequency.value = 1000;
-			osc4.connect(gain4);
-			gain4.connect(filter4);
-			filter4.connect(speaker);
-			//oscillators.push(osc2);
-			osc4.start(0);
-			gain4.gain.setValueAtTime(0.5, context.currentTime);
-			gain4.gain.linearRampToValueAtTime(0, context.currentTime + 5)
-			osc4.stop(context.currentTime + 5);
-	};
+	o.start(0);
+	filters.push(filter);
+	gains.push(k);
+	oscillators.push(o);
+}
 
+function play(){
+	var osc = context.createOscillator();
+	osc.type = 'sawtooth';
+	osc.frequency.value = 108;
+	osc.connect(gain);
+	gain.connect(distortion);
+	distortion.connect(filter);
+	filter.connect(delay);
 
-	function play3(){
-			var LFO = context.createOscillator();
-			LFO.type = 'sine';
-			LFO.frequency.value = 5.0;
-			var osc3 = context.createOscillator();
-			osc3.type = 'sine';
-			osc3.frequency.value = 392;
-			var gain3 = context.createGain();
-			gain3.gain.value = 0.5;
-			var gain31 = context.createGain();
-			gain31.gain.value = 300;
-			var filter3 = context.createBiquadFilter();
-			filter3.frequency.value = 1000;
-			osc3.connect(gain3);
-			gain3.connect(filter3);
-			LFO.connect(gain31);
-			gain31.connect(filter3.frequency);
-			filter3.connect(speaker);
-			//oscillators.push(osc3);
-			osc3.start(0);
-			LFO.start(0);
-			gain3.gain.setValueAtTime(0.5, context.currentTime);
-			gain3.gain.linearRampToValueAtTime(0, context.currentTime + 5)
-			osc3.stop(context.currentTime + 5);
-	};
+	delay.connect(dGain);
+	dGain.connect(dFilt);
+	dFilt.connect(delay);
 
+	delay.connect(verb);
+	//filter.connect(verb);
+	verb.connect(hpf);
+	//boost.connect(hpf);
+	hpf.connect(dynamics);
+	dynamics.connect(speaker);
+};
 
-			var osc2 = context.createOscillator();
-			osc2.type = 'sine';
-			osc2.frequency.value = 329.63;
-			var gain2 = context.createGain();
-			gain2.gain.value = 0.0;
-			var filter2 = context.createBiquadFilter();
-			filter2.frequency.value = 1000;
-			//osc2.connect(gain);
-			gain2.connect(filter2);
-			filter2.connect(speaker);
-			//oscillators.push(osc2);
-			//osc2.start(0);
-			//gain2.gain.setValueAtTime(0.5, context.currentTime);
-			//gain2.gain.linearRampToValueAtTime(0, context.currentTime + 5)
-			//osc2.stop(context.currentTime + 5);
+//attack
+function att(t){
+	x = gain.gain.setValueAtTime(0, context.currentTime);
+	y = gain.gain.linearRampToValueAtTime(1, context.currentTime + t);
+	return x,y;
+};
 
+//decay
+function dec(t){
+	x = gain.gain.setValueAtTime(1, context.currentTime);
+	y = gain.gain.linearRampToValueAtTime(0, context.currentTime + t);
+	return x,y;
+};
 
-			var lfo = context.createOscillator();
-			lfo.frequency.value = 3;
-			var depth = context.createGain();
-			depth.gain.value = 1000;
-
-			var osc1 = context.createOscillator();
-			osc1.type = 'triangle';
-			osc1.frequency.value = 130.81;
-			var gain = context.createGain();
-			gain.gain.value = 0.0;
-			var filter = context.createBiquadFilter();
-			filter.type = 'lowpass';
-			filter.Q.value = 0.5;
-			filter.frequency.value = 1000;
-			//depth.connect(lfo);
-			//lfo.connect(filter.frequency);
-			osc1.connect(gain);
-			osc2.connect(gain);
-			gain.connect(filter);
-			filter.connect(speaker);
-			//osc1.start(0);
-			//gain.gain.setValueAtTime(0.5, context.currentTime);
-			//gain.gain.linearRampToValueAtTime(0, context.currentTime + 5)
-			//osc1.stop(context.currentTime + 5);
-
-
-	function att(t){
-		x = gain.gain.setValueAtTime(0, context.currentTime);
-		y = gain.gain.linearRampToValueAtTime(1, context.currentTime + t);
-		return x,y;
-	};
-
-	function dec(t){
-		x = gain.gain.setValueAtTime(1, context.currentTime);
-		y = gain.gain.linearRampToValueAtTime(0, context.currentTime + t);
-		return x,y;
-	};
-
-	function end(){
-		for(var i = 0; i < oscillators.length; i++) {
-  				var o = oscillators[i];
-  				o.stop(context.currentTime + 2);
-  				o.disconnect();
-  		};
-	};
+//stop all oscillators
+function end(){
+	for(var i = 0; i < oscillators.length; i++) {
+				var os = oscillators[i];
+				os.stop(context.currentTime + 2);
+				os.disconnect();
+		};
+};
