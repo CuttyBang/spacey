@@ -1,5 +1,5 @@
 $(document).ready(function(){
-    //fabric.Object.prototype.originX = fabric.Object.prototype.originY = 'center';
+    fabric.Object.prototype.originX = fabric.Object.prototype.originY = 'center';
 
     var WIDTH = window.innerWidth,
         HEIGHT = window.innerHeight;
@@ -7,7 +7,6 @@ $(document).ready(function(){
     var canvas = new fabric.Canvas('screen',{
         hoverCursor: 'pointer',
         selection: false,
-        backgroundColor: '#000',
         width: WIDTH,
         height: HEIGHT
     });
@@ -26,7 +25,7 @@ $(document).ready(function(){
 
         var attractor = Physics.behavior('attractor', {
             order: 0,
-            strength: .002
+            strength: .0005
         });
 
         var renderer = Physics.renderer('canvas', {
@@ -41,7 +40,7 @@ $(document).ready(function(){
             x: renderer.width / 2,
             y: renderer.height / 2,
             radius: 40,
-            mass: 20,
+            mass: 50,
             vx: 0.00001,
             vy: 0,
             styles: {
@@ -59,24 +58,28 @@ $(document).ready(function(){
         var distList = [];
         var bodies = [];
         var asteroidColors = ['#22feac', '#dae6eb', '#e4d9d7', '#8f9779', '#c1be77'];
-        var startPoint = renderer.height / 2 -240
-
+        //var startPoint = renderer.height / 2 -240
+        //240px = .2 vx
+        //140px = .25vx
         function asteroid(){
-          var a = Physics.body('circle', {
-              x: -20,
-              y: getRandomInt(-20, HEIGHT + 20),
-              radius: getRandomInt(5, 15),
-              mass: getRandomInt(1, 5),
-              vx: 0.15,
-              styles: {
-                  fillStyle: asteroidColors[getRandomInt(0, 4)],
-                  angleIndicator: false
-              }
-          });
-          world.add(a);
-          bodies.push(a);
-          var l = new Array;
-          distList.push(l);
+            var startPoints = [];
+            var a = Physics.body('circle', {
+                x: renderer.width / 2, //-20,
+                y: renderer.height / 2 -240, //getRandomInt(-20, HEIGHT + 20),
+                radius: getRandomInt(5, 15),
+                mass: 15,//getRandomInt(1, 5),
+                vx: 0.2,
+                styles: {
+                    fillStyle: asteroidColors[getRandomInt(0, 4)],
+                    angleIndicator: false
+                }
+            });
+            world.add(a);
+            a.treatment = 'dynamic'
+            bodies.push(a);
+            asteroid.fixedRotation = true;
+            var l = new Array;
+            distList.push(l);
         }
 
 
@@ -101,42 +104,38 @@ $(document).ready(function(){
                     var j = distList[posIndex];
                     j.push(Math.round(distance));
 
-            if (distance <= 400) {
+            if (distance <= 450) {
                 if (j[j.length - 1] < j[j.length - 2]){
-                   gains[posIndex].gain.value += Math.min(1, 0.001);
-                   boost.gain.value += Math.min(1,0.001)
+                   gains[posIndex].gain.value = Math.min(1, gains[posIndex].gain.value + (1 / Math.round(distance)));
+                   vGain.gain.value = Math.min(1, vGain.gain.value + (1 / Math.round(distance)));
+                   //console.log(vGain.gain.value);
                 }
                 if (j[j.length - 1] > j[j.length - 2]){
-                    gains[posIndex].gain.value -= Math.max(0, 0.001);
-                    boost.gain.value -= Math.max(0, 0.001);
+                    gains[posIndex].gain.value = Math.max(0, gains[posIndex].gain.value - (1 / Math.round(distance)));
+                    vGain.gain.value = Math.max(0.3, vGain.gain.value - (0.7 / Math.round(distance)));
+                    //console.log(vGain.gain.value);
                 }
             }
-            if (distance <= 300) {
+            if (distance <= 350) {
                 if (j[j.length - 1] < j[j.length - 2]){
-                   filters[posIndex].frequency.value += Math.min(5000, 20);
-                   filters[posIndex].Q.value += Math.min(20, 1);
-                   
+                   filters[posIndex].frequency.value = Math.min(5000, filters[posIndex].frequency.value + (2500/ Math.round(distance)));
+                   filters[posIndex].Q.value = Math.min(20, filters[posIndex].Q.value + (20/ Math.round(distance)));
+                   console.log(filters[posIndex].frequency.value);
                 }
                 if (j[j.length - 1] > j[j.length - 2]){
-                   filters[posIndex].frequency.value -= Math.max(0, 20);
-                   filters[posIndex].Q.value -= Math.max(0, 1);
-
+                   filters[posIndex].frequency.value = Math.max(0, filters[posIndex].frequency.value - (2500 / Math.round(distance)));
+                   filters[posIndex].Q.value = Math.max(0, filters[posIndex].Q.value - (20 / Math.round(distance)));
+                   console.log(filters[posIndex].frequency.value);
                 }
             }
-            if (distance > 300) {
+            if (distance > 450) {
                 filters[posIndex].frequency.value = 0.0;
                 filters[posIndex].Q.value = 0.0;
-
             }
-            if (distance > 400) {
+            if (distance > 550) {
                 gains[posIndex].gain.value = 0.0;
+                vGain.gain.value = 0.3
             }
-            //if (mPos == startPoint){
-              //lfos[posIndex].frequency.value = 1;
-            //}
-            //if (mPos != startPoint){
-              //lfos[posIndex].frequency.value = 0;
-            //}
         };
 
 
@@ -147,11 +146,15 @@ $(document).ready(function(){
 
 
         $(document).keydown(function(e){
-          if (e.keyCode === 32){
-            e.preventDefault();
-            oscFactory();
-            asteroid();
-          }
+            if (e.keyCode === 32){
+                e.preventDefault()
+                oscFactory();
+                asteroid();  
+            }
+            if(e.keyCode === 81){
+                e.preventDefault();
+                world.remove();
+            }
         });
 
 
@@ -159,13 +162,10 @@ $(document).ready(function(){
             world.render();
             for (var i = 0; i<bodies.length; i++){
               sound(bodies[i], i);
-              console.log("gain: "+gains[0].gain.value);
-              console.log("filter: "+filters[0].frequency.value);
-              console.log("Q: "+filters[0].Q.value)
-              console.log(distList[0]);
             };
         });
 
+        
 
         world.on({
             'interact:poke': function(pos){

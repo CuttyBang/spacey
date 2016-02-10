@@ -1,7 +1,15 @@
-
-
 #screen {
-	border: 1px solid #000;
-	background-image: url('../img/stars.jpg');
+  border: 1px solid #000;
+  background-image: url("../img/stars.jpg");
+  background-color: #000;
+
+}
+
+body {
+  background-image: url("../img/stars.jpg");
+}
+
+.info-text {
 	background-color: #000;
+	color: #fff;
 }

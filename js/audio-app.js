@@ -16,8 +16,10 @@ dynamics.reduction.value = -5;
 dynamics.attack.value = 0;
 dynamics.release.value = 0.3;
 
+var vGain = context.createGain();
+vGain.gain.value = 0.5;
 var boost = context.createGain();
-boost.gain.value = 0.8
+boost.gain.value = 0.8;
 var hpf = context.createBiquadFilter();
 hpf.type = 'highpass';
 hpf.frequency.value = 100;
@@ -26,11 +28,11 @@ distortion.curve = distCurve(20);
 distortion.oversample = '4x';
 
 var delay = context.createDelay();
-delay.delayTime.value = 0.2;
+delay.delayTime.value = 0.18;
 var dFilt = context.createBiquadFilter();
 dFilt.frequency.value = 1000;
 var dGain = context.createGain();
-dGain.gain.value = 0.8;
+dGain.gain.value = 0.6;
 
 
 function distCurve(amt){
@@ -57,21 +59,31 @@ var verb = (function() {
 				right[i] = Math.random() * 2 - 1;
 		}
 		convolver.buffer = noiseBuffer;
-		//convolver.normalize = true;
+		convolver.normalize = true;
 		return convolver;
 })();
 
-boost.connect(hpf);
-hpf.connect(delay);
-verb.connect(speaker);
+boost.connect(dynamics);
+boost.connect(delay);
+boost.connect(vGain);
 
-dynamics.connect(verb);
+verb.connect(vGain);
+
+vGain.connect(dynamics);
 
 //delay effect
 delay.connect(dGain);
 dGain.connect(dFilt);
 dFilt.connect(delay);
-delay.connect(speaker);
+delay.connect(hpf);
+
+hpf.connect(dynamics);
+
+dynamics.connect(speaker);
+
+//////////////                           /--DELAY--HPF--\
+//OSC--GAIN--DISTORTION--FILTER--BOOST--|--------------DYNAMICS--SPEAKER(OUT)
+/////////////                            \--VERB--VGAIN-/
 
 var oscTypes = ['sine', 'triangle'],
 		freqs = [130.81, 329.63, 392, 523.25];
@@ -89,7 +101,7 @@ var scale = [
 
 var oscFactory = function(){
 	var o = context.createOscillator();
-	o.type = 'sawtooth';
+	o.type = 'triangle';
 	o.frequency.value = scale[getRandomInt(0, 7)];
 	var k = context.createGain();
 	k.gain.value = 0.0;
@@ -100,18 +112,12 @@ var oscFactory = function(){
 	var distortion = context.createWaveShaper();
 	distortion.curve = distCurve(10);
 	distortion.oversample = '4x';
-	var delay = context.createDelay();
-	delay.delayTime.value = 0.2;
-	var dFilt = context.createBiquadFilter();
-	dFilt.frequency.value = 1000;
-	var dGain = context.createGain();
-	dGain.gain.value = 0.8;
-	
+
 	o.connect(k);
 	k.connect(distortion);
 	distortion.connect(filter);
-	//filter.connect(hpf);
-	filter.connect(speaker);
+	filter.connect(delay);
+	filter.connect(boost);
 
 
 	o.start(0);
@@ -120,40 +126,21 @@ var oscFactory = function(){
 	oscillators.push(o);
 }
 
-function play(){
-	var osc = context.createOscillator();
-	osc.type = 'sawtooth';
-	osc.frequency.value = 108;
-	osc.connect(gain);
-	gain.connect(distortion);
-	distortion.connect(filter);
-	filter.connect(delay);
 
-	delay.connect(dGain);
-	dGain.connect(dFilt);
-	dFilt.connect(delay);
-
-	delay.connect(verb);
-	//filter.connect(verb);
-	verb.connect(hpf);
-	//boost.connect(hpf);
-	hpf.connect(dynamics);
-	dynamics.connect(speaker);
-};
 
 //attack
 function att(t){
 	x = gain.gain.setValueAtTime(0, context.currentTime);
 	y = gain.gain.linearRampToValueAtTime(1, context.currentTime + t);
 	return x,y;
-};
+}
 
 //decay
 function dec(t){
 	x = gain.gain.setValueAtTime(1, context.currentTime);
 	y = gain.gain.linearRampToValueAtTime(0, context.currentTime + t);
 	return x,y;
-};
+}
 
 //stop all oscillators
 function end(){
