@@ -25,9 +25,6 @@ pre.gain.value = 0.8;
 var hpf = context.createBiquadFilter();
 hpf.type = 'highpass';
 hpf.frequency.value = 100;
-var distortion = context.createWaveShaper();
-distortion.curve = distCurve(20);
-distortion.oversample = '4x';
 
 var delay = context.createDelay();
 delay.delayTime.value = 0.18;
@@ -51,18 +48,18 @@ function distCurve(amt){
 	return curve;
 };
 
-var verb = (function() {
-		var convolver = context.createConvolver(),
-				noiseBuffer = context.createBuffer(4, 6 * context.sampleRate, context.sampleRate),
-				left = noiseBuffer.getChannelData(0),
-				right = noiseBuffer.getChannelData(1);
-		for (var i = 0; i < noiseBuffer.length; i++) {
-				left[i] = Math.random() * 2 - 1;
-				right[i] = Math.random() * 2 - 1;
-		}
-		convolver.buffer = noiseBuffer;
-		convolver.normalize = true;
-		return convolver;
+var verb = (function(){
+	var convolver = context.createConvolver(),
+			noiseBuffer = context.createBuffer(2, 3 * context.sampleRate, context.sampleRate),
+			left = noiseBuffer.getChannelData(0),
+			right = noiseBuffer.getChannelData(1);
+	for (var i = 0; i < noiseBuffer.length; i++) {
+			left[i] = Math.random() * 2 - 1;
+			right[i] = Math.random() * 2 - 1;
+	}
+	convolver.buffer = noiseBuffer;
+	convolver.normalize = true;
+	return convolver;
 })();
 
 //boost->compression
