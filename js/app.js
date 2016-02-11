@@ -13,6 +13,17 @@ $(document).ready(function(){
 
     var getRandomInt = fabric.util.getRandomInt;
 
+    $('.info').hide();
+
+    window.setTimeout(function(){
+      $('.info').toggle("slide");
+    }, 1000);
+
+    window.setTimeout(function(){
+      $('.info').toggle("slide");
+
+    }, 5000);
+
     Physics(function(world) {
 
         var viewportBounds = Physics.aabb(-200, -200, WIDTH + 200, HEIGHT + 200);
@@ -146,7 +157,7 @@ $(document).ready(function(){
           filters.shift();
           distList.shift();
           dec(gains.shift(), 1);
-          end(oscillators.shift(), 1.5);
+          end(oscillators.shift(), 2);
         }
 
         $(document).on('resize', function () {
@@ -160,13 +171,15 @@ $(document).ready(function(){
               oscFactory();
               asteroid();
           }
-          if(e.keyCode === 75){
+          if(e.keyCode === 80){
               e.preventDefault();
               world.removeBody(bodies.shift());
               killIt();
           }
+          if (e.keyCode === 81){
+            end();
+          }
         });
-
 
         world.on('step', function () {
             world.render();
@@ -174,8 +187,6 @@ $(document).ready(function(){
               sound(bodies[i], i);
             };
         });
-
-
 
         world.on({
             'interact:poke': function(pos){
@@ -191,9 +202,7 @@ $(document).ready(function(){
                 planet.sleep(true);
                 world.remove(attractor);
             }
-
         });
-
 
         world.add([
             Physics.behavior('interactive', { el: renderer.container }),
@@ -201,7 +210,6 @@ $(document).ready(function(){
             Physics.behavior('body-impulse-response'),
             edgeBounce
         ]);
-
 
         Physics.util.ticker.on(function( time ) {
             world.step( time );

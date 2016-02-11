@@ -7,9 +7,25 @@
 
 body {
   background-image: url("../img/stars.jpg");
+  z-index: 100;
+}
+
+.info {
+  position: absolute;
+  top: 2em;
+  opacity: 0.7;
+  height: 10em;
+  background-color: #bbb;
+  z-index: 20;
+  border-top-right-radius: 30px;
+  border-bottom-right-radius: 30px;
 }
 
 .info-text {
-	background-color: #000;
-	color: #fff;
+  z-index: 30;
+  font-family: Helvetica, sans-serif;
+  font-size: 3em;
+  margin-top: 1em;
+  padding-right: 1em;
+  padding-left: 5%;
 }
