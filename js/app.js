@@ -118,18 +118,18 @@ $(document).ready(function(){
             }
             if (distance <= 350) {
                 if (j[j.length - 1] < j[j.length - 2]){
-                   filters[posIndex].frequency.value = Math.min(5000, filters[posIndex].frequency.value + (2500/ Math.round(distance)));
+                   filters[posIndex].frequency.value = Math.min(8000, filters[posIndex].frequency.value + (3950/ Math.round(distance)));
                    filters[posIndex].Q.value = Math.min(20, filters[posIndex].Q.value + (20/ Math.round(distance)));
-                   console.log(filters[posIndex].frequency.value);
+                   //console.log(filters[posIndex].frequency.value);
                 }
                 if (j[j.length - 1] > j[j.length - 2]){
-                   filters[posIndex].frequency.value = Math.max(0, filters[posIndex].frequency.value - (2500 / Math.round(distance)));
+                   filters[posIndex].frequency.value = Math.max(50, filters[posIndex].frequency.value - (3950/ Math.round(distance)));
                    filters[posIndex].Q.value = Math.max(0, filters[posIndex].Q.value - (20 / Math.round(distance)));
-                   console.log(filters[posIndex].frequency.value);
+                   //console.log(filters[posIndex].frequency.value);
                 }
             }
             if (distance > 450) {
-                filters[posIndex].frequency.value = 0.0;
+                filters[posIndex].frequency.value = 50;
                 filters[posIndex].Q.value = 0.0;
             }
             if (distance > 550) {
@@ -138,23 +138,33 @@ $(document).ready(function(){
             }
         };
 
+        Array.prototype.remove = function(index){
+          this.splice(index, 1);
+        };
+
+        function killIt(){
+          filters.shift();
+          distList.shift();
+          dec(gains.shift(), 1);
+          end(oscillators.shift(), 1.5);
+        }
 
         $(document).on('resize', function () {
             viewportBounds = Physics.aabb(0, 0, renderer.width, renderer.height);
             edgeBounce.setAABB(viewportBounds);
         }, true);
 
-
         $(document).keydown(function(e){
-            if (e.keyCode === 32){
-                e.preventDefault()
-                oscFactory();
-                asteroid();  
-            }
-            if(e.keyCode === 81){
-                e.preventDefault();
-                world.remove();
-            }
+          if (e.keyCode === 32){
+              e.preventDefault()
+              oscFactory();
+              asteroid();
+          }
+          if(e.keyCode === 75){
+              e.preventDefault();
+              world.removeBody(bodies.shift());
+              killIt();
+          }
         });
 
 
@@ -165,7 +175,7 @@ $(document).ready(function(){
             };
         });
 
-        
+
 
         world.on({
             'interact:poke': function(pos){
