@@ -1,3 +1,4 @@
+
 //webAudio set up
 var AudioContext = window.AudioContext || window.webkitAudioContext;
 var context = new AudioContext();
@@ -16,6 +17,8 @@ dynamics.reduction.value = -5;
 dynamics.attack.value = 0;
 dynamics.release.value = 0.3;
 
+var master = context.createGain();
+master.gain.value = 1;
 var vGain = context.createGain();
 vGain.gain.value = 0.3;
 var boost = context.createGain();
@@ -33,7 +36,7 @@ dFilt.frequency.value = 1000;
 var dGain = context.createGain();
 dGain.gain.value = 0.6;
 
-
+//distortion(overdrive)
 function distCurve(amt){
 	var k = typeof amt === 'number' ? amt : 50,
 		n_samples = 44100,
@@ -48,6 +51,7 @@ function distCurve(amt){
 	return curve;
 };
 
+//reverb
 var verb = (function(){
 	var convolver = context.createConvolver(),
 			noiseBuffer = context.createBuffer(2, 3 * context.sampleRate, context.sampleRate),
@@ -80,32 +84,35 @@ delay.connect(hpf);
 hpf.connect(pre);
 //preamp-->compression
 pre.connect(dynamics);
-//dynamic compression-->stereo out
-dynamics.connect(speaker);
+//dynamic compression-->master gain----->output
+dynamics.connect(master);
+master.connect(speaker);
 
 //////////////
 //OSC--GAIN--DISTORTION--FILTER--BOOST-----------------DYNAMICS--SPEAKER(OUT)
 /////////////                      |\--VGain--VERB------\ |
-//////                             \--DELAY--HPF--------PREAMP
+//////                             \--DELAY--HPF-------PREAMP
 
 var oscTypes = ['sine', 'triangle'],
 		freqs = [130.81, 329.63, 392, 523.25];
 
 var scale = [
-	64.22,
-	72.08,
-	80.91,
-	85.72,
-	96.22,
-	108,
+	130.81,
+	128.43,
 	121.23,
-	128.43
+	108,
+	96.22,
+	85.72,
+	80.91,
+	72.08,
+	64.22,
+	60.1
 ];
-
+/*
 var oscFactory = function(){
 	var o = context.createOscillator();
 	o.type = 'triangle';
-	o.frequency.value = scale[getRandomInt(0, 7)];
+	o.frequency.value = scale[Math.floor(options.mass-1)];
 	var k = context.createGain();
 	k.gain.value = 0.0;
 	var filter = context.createBiquadFilter();
@@ -126,8 +133,8 @@ var oscFactory = function(){
 	filters.push(filter);
 	gains.push(k);
 	oscillators.push(o);
-}
-
+};
+*/
 
 
 //attack
@@ -155,6 +162,6 @@ function end(n, t){
 			var os = oscillators[i];
 			os.stop(context.currentTime + t);
 			os.disconnect();
-		};
+		}
 	}
-};
+}

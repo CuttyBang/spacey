@@ -1,13 +1,6 @@
-#screen {
-  border: 1px solid #000;
-  background-image: url("../img/stars.jpg");
-  background-color: #000;
 
-}
-
-body {
-  background-image: url("../img/stars.jpg");
-  z-index: 100;
+.hidden {
+  visibility:none;
 }
 
 .info {
@@ -21,11 +14,30 @@ body {
   border-bottom-right-radius: 30px;
 }
 
-.info-text {
+#modal {
+  font-size: 1.3em;
+}
+
+#info-text {
   z-index: 30;
   font-family: Helvetica, sans-serif;
   font-size: 3em;
   margin-top: 1em;
   padding-right: 1em;
   padding-left: 5%;
+}
+
+.dg {
+  z-index: 20;
+}
+
+#screen {
+  border: 1px solid #000;
+  background-image: url("../img/stars.jpg");
+  background-color: #000;
+  z-index: 0;
+}
+
+.canvas-container {
+  z-index: 0;
 }
